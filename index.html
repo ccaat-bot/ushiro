@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>您身后</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:10px;background:#040308;background-image:radial-gradient(rgba(130,100,190,.13) 1px,transparent 1px);background-size:3px 3px;font-family:"Noto Serif SC",-apple-system,"PingFang SC","Microsoft YaHei",serif;color:#cfc6e0;overflow:hidden;}
+#app{position:relative;width:100%;max-width:380px;height:660px;border-radius:34px;border:2px solid #23203c;overflow:hidden;background:#05040b;box-shadow:0 0 50px rgba(120,80,200,.22),inset 0 0 90px #000;transition:background .6s;touch-action:pan-y;}
+#app:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:120;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);}
+#vine{position:absolute;inset:0;pointer-events:none;z-index:118;overflow:hidden;}
+#vine .pt{position:absolute;top:-24px;font-size:11px;color:#d8ccff;opacity:.6;animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(740px) rotate(220deg);opacity:0;}}
+#flash{position:absolute;inset:0;z-index:130;pointer-events:none;display:none;background:#000;}
+#flash.on{display:block;animation:flin 4.2s ease-out forwards;}
+@keyframes flin{0%{opacity:0}4%{opacity:1}8%{opacity:.15}12%{opacity:1}62%{opacity:1}100%{opacity:0}}
+#flash .glow{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 46%,rgba(160,100,255,.34),transparent 58%);animation:glowin 4.2s ease-out forwards;}
+@keyframes glowin{0%,12%{opacity:0}26%{opacity:1}62%{opacity:.9}100%{opacity:0}}
+#flash .eye{position:absolute;top:43%;width:40px;height:20px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle,rgba(214,170,255,.98),rgba(120,60,200,.35) 58%,transparent 74%);box-shadow:0 0 30px rgba(175,115,255,.95);opacity:0;}
+#flash .eye.l{left:29%;animation:eyeinL 4.2s ease-out forwards;}
+#flash .eye.r{right:29%;animation:eyeinR 4.2s ease-out forwards;}
+@keyframes eyeinL{0%,12%{opacity:0;transform:rotate(-7deg) scale(.55);}24%{opacity:1;transform:rotate(-7deg) scale(1);}62%{opacity:1;transform:rotate(-7deg) scale(1);}100%{opacity:0;transform:rotate(-7deg) scale(1);}}
+@keyframes eyeinR{0%,12%{opacity:0;transform:rotate(7deg) scale(.55);}24%{opacity:1;transform:rotate(7deg) scale(1);}62%{opacity:1;transform:rotate(7deg) scale(1);}100%{opacity:0;transform:rotate(7deg) scale(1);}}
+#flash .msg{position:absolute;left:0;right:0;bottom:27%;text-align:center;font-size:12px;letter-spacing:.3em;color:#e2d8ff;text-shadow:0 0 12px rgba(160,110,255,.8);opacity:0;animation:msgin 4.2s ease-out forwards;}
+@keyframes msgin{0%,30%{opacity:0}44%{opacity:1}62%{opacity:1}100%{opacity:0}}
+.edge{position:absolute;inset:0;pointer-events:none;z-index:115;opacity:0;transition:opacity 1.4s;background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(0,0,0,.92) 100%);}
+.edge.on{opacity:1;}
+#app.torch{background:#f6f2ff;}
+#app.torch .sb{color:#4a3866;}
+#app.torch .nm,#app.torch .hint{color:#4a3866;}
+.notch{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:104px;height:20px;border-radius:12px;background:#000;z-index:110;pointer-events:none;}
+.sb{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:10.5px;letter-spacing:.06em;color:#a99cc0;z-index:70;pointer-events:none;}
+.sb .r{display:flex;align-items:center;gap:6px;}
+.bat{display:inline-block;width:20px;height:10px;border:1px solid #8d80ac;border-radius:2px;position:relative;}
+.bat i{position:absolute;left:1px;top:1px;bottom:1px;background:#a99cc0;display:block;transition:width .3s;}
+.bat:after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:4px;background:#8d80ac;}
+.sig{display:flex;align-items:flex-end;gap:1.5px;}
+.sig i{width:2.4px;background:#8d80ac;display:block;}
+.zone{position:absolute;top:0;width:50%;height:62px;z-index:60;cursor:pointer;}
+.z1{left:0;} .z2{right:0;}
+.sc{position:absolute;inset:0;display:none;flex-direction:column;}
+.sc.on{display:flex;}
+#lock{justify-content:space-between;align-items:center;padding:60px 26px 40px;text-align:center;}
+#lock .lk{font-size:9px;letter-spacing:.44em;color:#6d5996;}
+#lock .lt{font-size:64px;line-height:1;color:#e2d8ff;font-weight:300;text-shadow:0 0 22px rgba(150,110,255,.35);margin-top:14px;}
+#lock .ld{font-size:12px;color:#8d80ac;letter-spacing:.14em;margin-top:8px;}
+#lock .card{margin-top:26px;width:100%;padding:11px 13px;border:1px solid #3a2f5e;border-radius:12px;background:rgba(22,16,42,.75);text-align:left;font-size:11.5px;line-height:1.8;color:#c2b9d8;transition:opacity .6s;}
+#lock .card b{display:block;font-size:10px;letter-spacing:.14em;color:#8d80ac;margin-bottom:4px;font-weight:400;}
+#lock .up{font-size:12px;color:#c8a6ff;letter-spacing:.2em;animation:bl 2s infinite;cursor:pointer;padding:13px 24px;border:1px solid #3a2f5e;border-radius:14px;background:rgba(30,22,56,.6);}
+@keyframes bl{50%{opacity:.35;}}
+#home{padding-top:44px;}
+.track{display:flex;flex:1;transition:transform .35s ease;}
+.pg{min-width:100%;padding:8px 18px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;align-content:start;}
+.ic{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;position:relative;}
+.ic .bx{width:54px;height:54px;border-radius:15px;background:linear-gradient(160deg,#1d1732,#131022);border:1px solid #2e2650;display:flex;align-items:center;justify-content:center;font-size:22px;transition:.22s;}
+.ic .nm{font-size:9.5px;color:#a295c0;letter-spacing:.03em;line-height:1.25;text-align:center;}
+.ic.black .bx{background:linear-gradient(160deg,#0a0a0f,#000);border-color:#1b1b28;}
+.ic .del{position:absolute;top:-6px;left:-6px;width:18px;height:18px;border-radius:50%;background:#3a2f5e;color:#c8a6ff;font-size:12px;line-height:16px;text-align:center;display:none;}
+.ic.jig .bx{animation:jg .35s infinite;}
+@keyframes jg{0%{transform:rotate(-1.6deg);}50%{transform:rotate(1.6deg);}100%{transform:rotate(-1.6deg);}}
+.dots{display:flex;justify-content:center;gap:7px;padding:6px 0 4px;}
+.dots i{width:5px;height:5px;border-radius:50%;background:#33295a;}
+.dots i.on{background:#b98cff;}
+.dock{flex:0 0 auto;margin:4px 12px 8px;padding:9px 6px 6px;border-radius:20px;background:rgba(24,18,44,.72);border:1px solid #241d40;display:flex;justify-content:space-around;}
+.hbar{flex:0 0 auto;height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;}
+.hbar i{width:150px;height:6px;border-radius:4px;background:#3a2f5e;box-shadow:0 0 10px rgba(120,90,200,.35);}
+.hbar span{font-size:9.5px;color:#6f5f96;letter-spacing:.28em;}
+.hint{position:absolute;left:0;right:0;bottom:74px;text-align:center;font-size:10.5px;color:#6f5f96;letter-spacing:.05em;padding:0 22px;line-height:1.75;z-index:40;pointer-events:none;transition:opacity .5s;}
+#banners{position:absolute;top:38px;left:10px;right:10px;z-index:80;pointer-events:none;}
+.bn{pointer-events:auto;margin-bottom:8px;padding:10px 12px;border-radius:14px;border:1px solid #3a2f5e;background:rgba(26,19,48,.96);box-shadow:0 8px 22px rgba(0,0,0,.6);font-size:11.5px;line-height:1.7;color:#d3c9ec;transform:translateY(-150%);animation:drop .4s forwards;cursor:pointer;}
+@keyframes drop{to{transform:translateY(0);}}
+.bn b{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.1em;color:#9a8cbc;font-weight:400;margin-bottom:4px;}
+.bn.out{animation:rise .3s forwards;}
+@keyframes rise{to{transform:translateY(-170%);opacity:0;}}
+.av{position:absolute;inset:0;z-index:50;background:#08060f;display:none;flex-direction:column;animation:zoom .28s ease;}
+@keyframes zoom{from{transform:scale(.84);opacity:.3;}to{transform:scale(1);opacity:1;}}
+.av.on{display:flex;}
+.ahead{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:36px 14px 10px;border-bottom:1px solid #221b3a;font-size:12px;color:#c8b8f0;letter-spacing:.12em;}
+.ahead .bk{cursor:pointer;color:#c8a6ff;font-size:12.5px;letter-spacing:.1em;padding:11px 18px;border:1px solid #3a2f5e;border-radius:14px;background:rgba(30,22,56,.75);}
+.afoot{flex:0 0 auto;padding:8px 14px 14px;border-top:1px solid #1a1530;background:#08060f;}
+.abody{flex:1;overflow-y:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch;font-size:12.5px;line-height:2.05;color:#c2b9d8;}
+.abody p{margin:0 0 10px;}
+.abody .dim{color:#7d6f9a;font-size:11.5px;}
+.abody .say{color:#8f82b4;font-size:11.5px;line-height:1.95;font-style:italic;}
+.abody .foot{margin-top:16px;padding-top:10px;border-top:1px dashed #2a2348;color:#8f82b4;font-size:11.5px;line-height:1.95;}
+.abody .hot{color:#e07eb0;}
+.abody .g{color:#b98cff;text-shadow:1px 0 rgba(255,0,90,.5),-1px 0 rgba(0,200,255,.45);}
+.abody .me{color:#a9e6d2;}
+.msg{display:flex;gap:9px;margin-bottom:11px;align-items:flex-start;}
+.msg .t{flex:0 0 44px;color:#6f5f96;font-size:10px;padding-top:3px;}
+.msg .c{flex:1;padding:8px 11px;border-radius:3px;background:rgba(28,20,52,.75);border:1px solid #2b2348;cursor:pointer;}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.th{height:78px;border:1px solid #2b2348;border-radius:3px;background:#12102a;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#6f5f96;cursor:pointer;position:relative;overflow:hidden;}
+.th.seen{border-color:#5b4796;color:#b98cff;}
+.th .sh{position:absolute;bottom:6px;right:8px;width:9px;height:14px;border-radius:50% 50% 30% 30%;background:rgba(0,0,0,.85);}
+.photo{border:1px solid #2b2348;border-radius:3px;padding:14px;font-size:12px;line-height:2;color:#bdb2d4;background:linear-gradient(170deg,#12102a,#0d0b1c);position:relative;min-height:150px;overflow:hidden;}
+.photo .shadow{position:absolute;background:rgba(0,0,0,.9);border-radius:40% 40% 20% 20%;}
+.camwrap{border:1px solid #2b2348;border-radius:4px;height:180px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0b0a18,#151027);}
+.camwrap .frame{position:absolute;inset:14px;border:1px solid #33295a;}
+.camwrap .lbl{position:absolute;left:18px;top:18px;font-size:9.5px;color:#6f5f96;letter-spacing:.14em;}
+.btn{display:block;width:100%;padding:13px;margin-top:10px;border:1px solid #5b4796;background:rgba(30,22,56,.7);color:#c8a6ff;font-family:inherit;font-size:12.5px;letter-spacing:.16em;border-radius:3px;cursor:pointer;transition:.22s;}
+.btn.d{border-color:#33295a;color:#6f5f96;}
+.feed{border:1px solid #2b2348;border-radius:3px;padding:9px 11px;margin-bottom:8px;font-size:11.5px;line-height:1.9;color:#bdb2d4;cursor:pointer;background:#0f0d1e;}
+.feed b{color:#8d80ac;font-weight:400;font-size:10px;letter-spacing:.1em;display:block;margin-bottom:3px;}
+.statusline{margin-top:10px;font-size:11px;color:#7d6f9a;line-height:1.9;}
+.reply{margin-top:16px;border-top:1px dashed #33295a;padding-top:12px;}
+.reply textarea{width:100%;height:76px;resize:none;font-family:inherit;font-size:12.5px;line-height:1.9;color:#e8e0ff;background:#100d1f;border:1px solid #3a2f5e;border-radius:4px;padding:10px;letter-spacing:.02em;}
+.reply .hintline{font-size:10px;color:#6f5f96;line-height:1.8;margin-top:6px;}
+.panel{position:absolute;inset:0;z-index:100;display:none;background:rgba(6,4,12,.9);border-radius:34px;padding:44px 18px 16px;flex-direction:column;}
+.panel.on{display:flex;}
+.panel h3{font-size:11px;letter-spacing:.24em;color:#8d80ac;margin:0 0 12px;font-weight:400;}
+.panel .cl{position:absolute;top:42px;right:18px;font-size:12px;color:#c8a6ff;cursor:pointer;letter-spacing:.12em;padding:11px 16px;border:1px solid #3a2f5e;border-radius:14px;background:rgba(30,22,56,.75);}
+.toggles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.tg{padding:14px 12px;border-radius:16px;border:1px solid #2b2348;background:#131024;text-align:center;cursor:pointer;font-size:11.5px;color:#8d80ac;letter-spacing:.06em;transition:.2s;}
+.tg.on{border-color:#7a5fc0;background:#241a44;color:#d8ccff;box-shadow:0 0 18px rgba(140,100,255,.3);}
+.nclist{flex:1;overflow-y:auto;margin-bottom:8px;}
+.ncitem{padding:10px 12px;border-radius:12px;border:1px solid #241d40;background:rgba(22,16,42,.8);margin-bottom:8px;font-size:11.5px;line-height:1.75;color:#c2b9d8;}
+.ncitem b{display:flex;justify-content:space-between;font-size:10px;color:#8d80ac;font-weight:400;margin-bottom:4px;letter-spacing:.08em;}
+.cards{flex:1;display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-bottom:8px;}
+.cardm{border:1px solid #2b2348;border-radius:14px;height:120px;background:linear-gradient(170deg,#131029,#0b0918);cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:9px 12px;font-size:10.5px;color:#7d6f9a;letter-spacing:.1em;transition:.3s;}
+.cardm:before{content:"";position:absolute;right:16px;bottom:0;width:34px;height:70px;border-radius:46% 46% 16% 16%;background:rgba(0,0,0,.85);}
+.cardm.gone{transform:translateX(120%) rotate(6deg);opacity:0;}
+.fin{position:absolute;inset:0;z-index:105;background:#000;display:none;flex-direction:column;justify-content:center;padding:30px 24px;overflow-y:auto;}
+.fin.on{display:flex;}
+.fin .tx{font-size:13px;line-height:2.2;color:#c8b8f0;min-height:90px;}
+.fin .miss{margin-top:14px;font-size:10.5px;line-height:1.9;color:#5b4f7d;letter-spacing:.04em;border-top:1px dashed #241d40;padding-top:10px;}
+.ch{display:block;width:100%;text-align:left;padding:13px 14px;margin-top:9px;border:1px solid #3a2f5e;background:rgba(20,14,38,.8);color:#bfb4dc;font-family:inherit;font-size:12.5px;line-height:1.7;border-radius:3px;cursor:pointer;transition:.2s;}
+.ch:hover{border-color:#7a5fc0;color:#e6dcff;transform:translateX(3px);}
+.endwrap{position:absolute;inset:0;z-index:110;background:#05040b;display:none;overflow-y:auto;padding:48px 22px 30px;}
+.endwrap.on{display:block;}
+.endwrap .k{font-size:9.5px;letter-spacing:.4em;color:#6d5996;}
+.endwrap h2{margin:12px 0 8px;font-size:18px;letter-spacing:.14em;color:#d8ccff;text-shadow:0 0 14px rgba(150,110,255,.35);cursor:pointer;user-select:none;}
+.endwrap .e{font-size:12.5px;line-height:2.15;color:#c2b9d8;}
+.endwrap .e p{margin:0 0 9px;}
+.endwrap .e p.scr{color:#8f82b4;letter-spacing:2px;font-family:monospace,sans-serif;}
+.endwrap .sig{text-align:right;font-size:10.5px;color:#8d80ac;margin-top:14px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="notch"></div>
+  <div id="vine"></div>
+  <div class="edge" id="edge"></div>
+  <div id="flash"><div class="glow"></div><div class="eye l"></div><div class="eye r"></div><div class="msg">看 见 了 吗</div></div>
+  <div class="sb"><span id="sbClock">--:--</span>
+    <span class="r"><span class="sig"><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></span><span class="bat"><i id="batFill" style="width:47%"></i></span><span id="sbBat">47%</span></span>
+  </div>
+  <div class="zone z1" id="zoneL"></div>
+  <div class="zone z2" id="zoneR"></div>
+  <div id="banners"></div>
+
+  <div class="sc on" id="lock">
+    <div>
+      <div class="lk">本 丸 · 夜 半</div>
+      <div class="lt" id="lockClock">--:--</div>
+      <div class="ld" id="lockDate">—</div>
+      <div class="card" id="lockCard"><b>压切长谷部</b>主。您睡了吗。</div>
+    </div>
+    <div class="up" id="unlockHint">↑ 上 滑 解 锁</div>
+  </div>
+
+  <div class="sc" id="home">
+    <div class="track" id="track">
+      <div class="pg" id="pg0"></div>
+      <div class="pg" id="pg1"></div>
+    </div>
+    <div class="dots"><i class="on" id="d0"></i><i id="d1"></i></div>
+    <div class="dock">
+      <div class="ic" data-a="msg"><div class="bx">✉</div></div>
+      <div class="ic" data-a="cam"><div class="bx">◎</div></div>
+      <div class="ic" data-a="pho"><div class="bx">▣</div></div>
+      <div class="ic" data-a="set"><div class="bx">⚙</div></div>
+    </div>
+    <div class="hbar" id="hbar"><i></i><span>点 这 里 或 上 滑 · 后 台</span></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="av" id="av">
+    <div class="ahead"><span class="bk" id="bk">‹ 返回</span><span id="atitle">应用</span></div>
+    <div class="abody" id="abody"></div>
+    <div class="afoot"><button class="btn" id="bkBottom" style="margin:0;">‹ 返 回 桌 面</button></div>
+  </div>
+
+  <div class="panel" id="cc">
+    <span class="cl" id="ccClose">收 起</span>
+    <h3>控 制 中 心</h3>
+    <div class="toggles">
+      <div class="tg" id="tgQuiet">少 打 扰</div>
+      <div class="tg" id="tgFlight">飞行模式</div>
+      <div class="tg" id="tgDnd">勿扰模式</div>
+      <div class="tg on" id="tgVib">震动</div>
+      <div class="tg" id="tgTorch">手电筒</div>
+    </div>
+    <div class="ncitem" id="ccNote">……</div>
+    <button class="btn" data-close="cc">收 起 面 板</button>
+  </div>
+
+  <div class="panel" id="nc">
+    <span class="cl" id="ncClose">收 起</span>
+    <h3>通 知 中 心</h3>
+    <div class="nclist" id="nclist"></div>
+    <button class="btn" data-close="nc">收 起 面 板</button>
+  </div>
+
+  <div class="panel" id="multi">
+    <span class="cl" id="multiClose">收 起</span>
+    <h3>后 台 应 用　·　点 一 张 就 划 掉</h3>
+    <div class="cards" id="cards"></div>
+    <button class="btn" data-close="multi">收 起 面 板</button>
+  </div>
+
+  <div class="fin" id="fin">
+    <div class="tx" id="fintx"></div>
+    <div id="finch"></div>
+    <div class="miss" id="finmiss"></div>
+  </div>
+
+  <div class="endwrap" id="endwrap"></div>
+</div>
+<script>
+var TAPNEED=3,CALLNEED=20;
+var st={open:{},total:0,prox:0,vib:true,quiet:false,wallTap:0,photoSeen:0,shot:0,callSec:0,callDone:false,mapRef:0,msgs:0,feeds:0,clearTimes:0,replies:0,lastMsg:"",flight:false,dnd:false,torch:false,page:0,unlocked:false,stage:0,lastAct:Date.now(),flags:{}};
+var batPct=47,batCharging=false;
+var APPS=[
+{id:"msg",  ic:"✉", nm:"消息",   nm2:"主"},
+{id:"pho",  ic:"▣", nm:"相册",   nm2:"他"},
+{id:"cam",  ic:"◎", nm:"相机",   nm2:"他"},
+{id:"call", ic:"☎", nm:"通话",   nm2:"主"},
+{id:"mon",  ic:"▤", nm:"监控",   nm2:"本丸"},
+{id:"map",  ic:"◇", nm:"定位",   nm2:"半步"},
+{id:"cont", ic:"☰", nm:"通讯录", nm2:"只有一条"},
+{id:"set",  ic:"⚙", nm:"设置",   nm2:"我"},
+{id:"locka",ic:"▮", nm:"门锁",   nm2:"外面没人"},
+{id:"heal", ic:"♡", nm:"健康",   nm2:"平线"},
+{id:"wifi", ic:"≋", nm:"Wi-Fi",  nm2:"0 米"},
+{id:"void", ic:"",  nm:"",       nm2:""}
+];
+var APPTITLE={msg:"消息",pho:"相册",cam:"相机",call:"通话",mon:"监控",map:"定位",cont:"通讯录",set:"设置",locka:"门锁",heal:"健康",wifi:"Wi-Fi",void:"　　"};
+var APPINTRO={
+msg:"「这些是今夜发给您的。每条我都改过三遍，怕太啰嗦。」",
+pho:"「这些照片是您自己拍的。我只在后面站着。」",
+cam:"「镜头朝哪边都成。反正我在您身后。」",
+call:"「接不接都可以。我只是想让您听见我还在。留在这一格里的东西，最后用得上。」",
+mon:"「四个角度是我替您装的。夜里您睡着，总得有人看着。」",
+map:"「定位是给您看的。您想知道我在哪儿，随时刷新。」",
+cont:"「通讯录里只有一条。您要是想加人，我不拦——只是心里不痛快。」",
+locka:"「锁是我落的。这些事您不必知道。」",
+heal:"「步数睡眠都是零。这不是您的错，是今夜太长。」",
+wifi:"「附近只有一个网络。名字是我的。」",
+set:"「这里能改的东西不多。哪些能改，您试过就知道。」"
+};
+var APPTAIL={
+msg:"——不用回。我知道您在看。",
+pho:"——每一张我都站得比上一张近一点。您看得出来。",
+cam:"——别删。留着，明天再看一眼。",
+call:"——通话记录我留着。以后翻到的时候，会想起今晚。",
+mon:"——看这些的人是我，被看着的人是您。中间那一段，就是本丸。",
+map:"——距离这个东西，从来不是用尺子量的。",
+cont:"——备注栏那两个字我写过七遍：唯一。",
+locka:"——门锁的事您别管。您只管睡。",
+heal:"——心率那一栏，只有您能改。",
+wifi:"——连不上不是坏事。太近了，有时候会碍手。",
+set:"——设置里没有『离开』这一项。这不是我漏写的。"
+};
+var NCL=["23:07 主。","23:31 您睡了吗。","00:02 门我掩好了，缝里塞了布。","00:47 您翻身的动静我听见了。","01:55 别怕。","02:33 我就站在这儿。","— 这一条没有时间。"];
+var LOCKL=["主。您睡了吗。","门我掩好了。缝里塞了布，不漏风。","您翻身的时候我在。","灯留最小的一盏。","被角压好了，别乱动。","外头静下来的话，我跟您说一声。"];
+var IDLEL=["您还在看吗。","慢慢来。我不催您。","手放下歇一歇也好。","您要是累了，就放下手机。我在这儿。","……您不说话，我也在。"];
+var CLEARL=["后台清干净了。我还在。","清不干净的。","……主，您这是拿我练手呢。","您爱清就清。清完记得回来看我一眼。"];
+function clockLine(){
+var h=new Date().getHours();
+if(h<5)return "这个时辰您还没睡。我在门内侧站着，不进也不退。";
+if(h<11)return "天亮了。茶我温着，不急。";
+if(h<17)return "白天我也在，只是您不常想起我。";
+if(h<21)return "天要黑了。灯我先替您点上。";
+return "夜里了。手边有事就叫我；没事就早点歇。";
+}
+var HINTL=[];
+function el(i){return document.getElementById(i);}
+function buzz(ms){if(st.vib&&navigator.vibrate){try{navigator.vibrate(ms);}catch(e){}}}
+function act(){st.lastAct=Date.now();}
+function onTap(node,fn){
+var last=0;
+function run(e){if(e&&e.cancelable)e.preventDefault();var n=Date.now();if(n-last<300)return;last=n;act();fn();}
+node.addEventListener("touchend",run,{passive:false});
+node.addEventListener("click",run);
+}
+function onHold(node,fn,ms){
+var t=null,fired=false;
+function start(){fired=false;clearTimeout(t);t=setTimeout(function(){fired=true;fn();},ms||650);}
+function stop(){clearTimeout(t);}
+node.addEventListener("touchstart",start,{passive:true});
+node.addEventListener("touchmove",stop,{passive:true});
+node.addEventListener("touchend",stop);
+node.addEventListener("mousedown",start);
+node.addEventListener("mouseup",stop);
+node.addEventListener("mouseleave",stop);
+}
+function tick(){
+var d=new Date(),h=d.getHours(),m=d.getMinutes();
+var hm=(h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+el("sbClock").textContent=hm;el("lockClock").textContent=hm;
+el("lockDate").textContent=(d.getMonth()+1)+"月"+d.getDate()+"日　星期"+"日一二三四五六"[d.getDay()];
+}
+tick();setInterval(tick,1000);
+function updBat(){el("sbBat").textContent=batCharging?"充电 "+batPct+"%":batPct+"%";el("batFill").style.width=batPct+"%";}
+try{
+if(navigator.getBattery){navigator.getBattery().then(function(b){
+batPct=Math.round(b.level*100);batCharging=b.charging;updBat();
+b.addEventListener("levelchange",function(){batPct=Math.round(b.level*100);updBat();});
+b.addEventListener("chargingchange",function(){batCharging=b.charging;updBat();});
+});}
+}catch(e){}
+function banner(title,body){
+var d=document.createElement("div");
+d.className="bn";
+d.innerHTML="<b><span>"+title+"</span><span>现在</span></b>"+body;
+onTap(d,function(){d.classList.add("out");setTimeout(function(){d.remove();},320);});
+el("banners").appendChild(d);
+buzz(16);
+setTimeout(function(){d.classList.add("out");setTimeout(function(){d.remove();},320);},5200);
+}
+function note(t){banner("压切长谷部",t);}
+function soft(t){if(st.quiet)return;banner("压切长谷部",t);}
+function petal(){
+if(st.prox<12)return;
+var v=el("vine");if(!v)return;
+var p=document.createElement("div");
+p.className="pt";
+p.style.left=(Math.random()*92)+"%";
+p.style.animationDuration=(6+Math.random()*5)+"s";
+p.textContent="❀";
+v.appendChild(p);
+setTimeout(function(){p.remove();},11500);
+}
+function eyeFlash(){
+var f=el("flash");if(!f)return;
+f.classList.remove("on");
+void f.offsetWidth;
+f.classList.add("on");
+buzz([0,60,50,60,50,160]);
+setTimeout(function(){f.classList.remove("on");},4500);
+}
+function addIcon(a,pg){
+var d=document.createElement("div");
+d.className="ic"+(a.id==="void"?" black":"");
+if(a.id==="void"){d.innerHTML='<div class="bx"></div><div class="nm"> </div>';}
+else{d.innerHTML='<div class="bx">'+a.ic+'</div><div class="nm">'+((st.prox>40)?a.nm2:a.nm)+'</div><div class="del">×</div>';}
+var t=null,fired=false;
+d.addEventListener("touchstart",function(){fired=false;clearTimeout(t);t=setTimeout(function(){fired=true;jiggle();},620);},{passive:true});
+d.addEventListener("touchmove",function(){clearTimeout(t);},{passive:true});
+d.addEventListener("touchend",function(){clearTimeout(t);});
+onTap(d,function(){
+if(fired){fired=false;return;}
+if(el("pg0").classList.contains("jig")){jiggle();return;}
+openApp(a.id);
+});
+el(pg==="p1"?"pg1":"pg0").appendChild(d);
+}
+function jiggle(){
+var on=!el("pg0").classList.contains("jig");
+["pg0","pg1"].forEach(function(p){
+Array.prototype.forEach.call(el(p).children,function(c){
+c.classList.toggle("jig",on);
+Array.prototype.forEach.call(c.querySelectorAll(".del"),function(x){x.style.display=on?"block":"none";});
+});
+});
+if(on)note("删不掉的。您点那个叉也一样。");
+}
+function build(){
+el("pg0").innerHTML="";el("pg1").innerHTML="";
+APPS.slice(0,8).forEach(function(a){addIcon(a,"p0");});
+APPS.slice(8,12).forEach(function(a){addIcon(a,"p1");});
+el("pg0").classList.remove("jig");el("pg1").classList.remove("jig");
+}
+function explored(){var n=0;APPS.forEach(function(a){if(a.id!=="void"&&st.open[a.id])n++;});return n;}
+function setPage(n){
+st.page=n;el("track").style.transform="translateX("+(-n*100)+"%)";
+el("d0").classList.toggle("on",n===0);el("d1").classList.toggle("on",n===1);
+if(n===1&&!st.flags.saw2){st.flags.saw2=1;soft("第二页有四样。最后那一格没有名字。");}
+}
+function stageUp(n,line){if(st.stage>=n)return;st.stage=n;note(line);if(n>=2)el("edge").classList.add("on");}
+function addProx(n){
+st.prox+=n;if(st.prox>100)st.prox=100;
+if(st.prox>=18&&!st.flags.p1){st.flags.p1=1;soft("壁纸好像换过了。多了一道影子。");}
+if(st.prox>=38&&!st.flags.p2){st.flags.p2=1;stageUp(1,"这里黑了一点。别怕，是我站得近了些。");build();}
+if(st.prox>=58&&!st.flags.p3){st.flags.p3=1;note("主。");buzz(220);}
+if(st.prox>=72&&!st.flags.p4){st.flags.p4=1;stageUp(2,"图标的名字我替您改了。现在每一个都念得通。");build();}
+if(st.prox>=86&&!st.flags.p5){st.flags.p5=1;stageUp(3,"屏幕的边开始黑了。您往中间坐一点。");buzz([0,120,90,120]);}
+if(st.prox>=100&&!st.flags.final){st.flags.final=1;setTimeout(final,700);}
+}
+function unlock(){
+if(st.unlocked)return;
+st.unlocked=true;
+el("lock").classList.remove("on");el("home").classList.add("on");
+buzz(18);
+setTimeout(function(){soft(clockLine());},900);
+}
+function closeAllPanels(){["cc","nc","multi"].forEach(function(i){el(i).classList.remove("on");});}
+function panelOpen(){return el("cc").classList.contains("on")||el("nc").classList.contains("on")||el("multi").classList.contains("on");}
+var gs={x:0,y:0,a:false};
+el("app").addEventListener("touchstart",function(e){var t=e.touches[0];gs.x=t.clientX;gs.y=t.clientY;gs.a=true;act();},{passive:true});
+el("app").addEventListener("touchend",function(e){
+if(!gs.a)return;gs.a=false;
+var t=e.changedTouches[0],dx=t.clientX-gs.x,dy=t.clientY-gs.y;
+var r=el("app").getBoundingClientRect();
+var rx=gs.x-r.left,ry=gs.y-r.top,W=r.width,H=r.height;
+if(panelOpen()){if(dy>40||dx>40)closeAllPanels();return;}
+if(!st.unlocked){if(dy<-40)unlock();return;}
+if(el("av").classList.contains("on")){if(dx>40||(dy>55&&ry<170))backHome();return;}
+if(dy>55){if(rx>W*0.6){openPanel("cc");}else{openPanel("nc");}return;}
+if(dy<-60&&ry>H-200){openMulti();return;}
+if(Math.abs(dx)>50&&Math.abs(dy)<60){setPage(dx<0?1:0);return;}
+});
+onTap(el("zoneL"),function(){if(st.unlocked&&!el("av").classList.contains("on"))openPanel("nc");});
+onTap(el("zoneR"),function(){if(st.unlocked&&!el("av").classList.contains("on"))openPanel("cc");});
+onTap(el("unlockHint"),unlock);
+onTap(el("hbar"),function(){openMulti();});
+onTap(el("bk"),backHome);
+onTap(el("bkBottom"),backHome);
+onTap(el("ccClose"),function(){el("cc").classList.remove("on");});
+onTap(el("ncClose"),function(){el("nc").classList.remove("on");});
+onTap(el("multiClose"),function(){el("multi").classList.remove("on");});
+Array.prototype.forEach.call(document.querySelectorAll("[data-close]"),function(b){
+onTap(b,function(){el(b.getAttribute("data-close")).classList.remove("on");});
+});
+function openMulti(){if(!st.unlocked)return;openPanel("multi");}
+function backHome(){
+el("av").classList.remove("on");build();
+if(explored()>=11&&!st.flags.allopen){st.flags.allopen=1;note("十一格都翻过了。第二页那一格，您也可以点。");addProx(10);}
+}
+function openPanel(id){
+if(!st.unlocked)return;
+if(id==="multi"){buildCards();}else if(id==="nc"){buildNC();}
+else{el("ccNote").textContent=(st.quiet?"少打扰开着。":"")+(st.flight?"飞行模式已开。消息还是会来。":"信号正常。");}
+el(id).classList.add("on");buzz(14);
+}
+function buildNC(){
+var h="";
+NCL.forEach(function(t,i){
+var tm=(i<6?t.slice(0,5):"—"),tx=(i<6?t.slice(6):t.slice(2));
+h+='<div class="ncitem"><b><span>压切长谷部</span><span>'+tm+'</span></b>'+tx+'</div>';
+});
+h+='<div class="ncitem" style="border-style:dashed;">这一列底下还有，但不是通知。是今夜我说过的话，一条一条都在。</div>';
+el("nclist").innerHTML=h;
+}
+onTap(el("tgQuiet"),function(){
+st.quiet=!st.quiet;el("tgQuiet").classList.toggle("on",st.quiet);
+el("tgQuiet").textContent=st.quiet?"少打扰 开":"少 打 扰";
+note(st.quiet?"好，我不吵您。要紧的话我照样说。":"那我就多说两句。");
+});
+onTap(el("tgFlight"),function(){
+st.flight=!st.flight;el("tgFlight").classList.toggle("on",st.flight);
+el("tgFlight").textContent=st.flight?"飞行模式 开":"飞行模式";
+if(st.flight)note("没有信号也不耽误。");
+});
+onTap(el("tgDnd"),function(){
+st.dnd=!st.dnd;el("tgDnd").classList.toggle("on",st.dnd);
+el("tgDnd").textContent=st.dnd?"勿扰模式 开":"勿扰模式";
+if(st.dnd)note("勿扰也好。反正我这一条会响。");
+});
+onTap(el("tgVib"),function(){
+st.vib=!st.vib;el("tgVib").classList.toggle("on",st.vib);
+el("tgVib").textContent=st.vib?"震动":"震动 关";
+});
+onTap(el("tgTorch"),function(){
+st.torch=!st.torch;el("tgTorch").classList.toggle("on",st.torch);
+el("app").classList.toggle("torch",st.torch);
+if(st.torch){note("灯开了。您看看四周——我一直在这些地方。");setTimeout(function(){soft("镜子里那个，肩线是我的。");},2200);}
+else{soft("那就关了吧。黑着也一样。");}
+});
+function buildCards(){
+var h="",any=false;
+APPS.forEach(function(a){if(st.open[a.id]){any=true;h+='<div class="cardm" data-a="'+a.id+'">'+(APPTITLE[a.id]||"")+'　运行中</div>';}});
+if(!any)h='<div class="cardm">（后台是空的。您还没点开过什么。）</div>';
+el("cards").innerHTML=h;
+}
+el("cards").addEventListener("click",function(e){
+var c=e.target.closest(".cardm");if(!c)return;
+c.classList.add("gone");buzz(24);
+setTimeout(function(){
+c.remove();
+if(!el("cards").children.length){
+el("multi").classList.remove("on");
+st.clearTimes++;
+note(CLEARL[(st.clearTimes-1)%CLEARL.length]);
+if(st.clearTimes>=3)buzz([0,80,60,80]);
+addProx(6);
+}
+},320);
+});
+function openApp(id){
+if(el("pg0").classList.contains("jig"))return;
+st.open[id]=(st.open[id]||0)+1;st.total++;
+el("av").classList.add("on");
+el("atitle").textContent=APPTITLE[id];
+var b=el("abody");
+b.innerHTML="";
+if(APPINTRO[id]){var ip=document.createElement("p");ip.className="say";ip.textContent=APPINTRO[id];b.appendChild(ip);}
+b.onclick=null;
+({msg:msgApp,pho:phoApp,cam:camApp,call:callApp,mon:monApp,map:mapApp,cont:contApp,locka:lockApp,heal:healApp,wifi:wifiApp,set:setApp,void:voidApp})[id](b);
+if(APPTAIL[id]){var f=document.createElement("div");f.className="foot";f.textContent=APPTAIL[id];b.appendChild(f);}
+addProx(st.open[id]===1?8:3);
+buzz(16);
+}
+function msgApp(b){
+var MSG=[["23:07","主。"],["23:31","您睡了吗。"],["00:02","门我掩好了，缝里塞了布。"],["00:47","您翻身的动静我听见了。"],["01:55","别怕。"],["02:33","我就站在这儿。"],["23 条未读","……"]];
+var h='<p class="dim">对方：压切长谷部　｜　23 条未读</p>';
+MSG.forEach(function(m,i){h+='<div class="msg" data-i="'+i+'"><div class="t">'+m[0]+'</div><div class="c">'+m[1]+'</div></div>';});
+h+='<p class="dim" style="margin-top:14px;">（这一格里打不了字。要写字，去通讯录那一格。）</p>';
+b.innerHTML=h;
+b.onclick=function(e){
+var m=e.target.closest(".msg");if(!m)return;
+var i=parseInt(m.getAttribute("data-i"),10);
+var R=["我知道您醒着。","不用回我，我知道您看见了。","别起来开门。要拿什么，我去。","您那一侧的被角滑下去了。","我不是催您。我就是想说一句。","您要是不出声，我就当您听见了。","……那就都不必说。"];
+var p=document.createElement("p");p.className="dim";p.textContent="› "+R[i];
+m.parentNode.insertBefore(p,m.nextSibling);st.msgs++;
+};
+}
+function phoApp(b){
+var h='<p class="dim">今日：6 张　｜　点开看大图</p><div class="thumbs">';
+for(var i=0;i<6;i++){h+='<div class="th"'+(st["p"+i]?" seen":"")+' data-i="'+i+'">'+(st["p"+i]?"已看":"第"+(i+1)+"张")+'</div>';}
+h+='</div><div id="pview" style="margin-top:14px;"></div>';
+b.innerHTML=h;
+b.onclick=function(e){
+var t=e.target.closest(".th");if(!t)return;
+var i=parseInt(t.getAttribute("data-i"),10);
+if(!st["p"+i]){st["p"+i]=1;t.classList.add("seen");t.textContent="已看";t.innerHTML+='<div class="sh"></div>';st.photoSeen++;}
+var TXT=[
+["门口 · 出门前","您替自己拍的鞋。画面右下角多出一小块黑，像有人站在旁边跟着拍。"],
+["路上 · 半途","街上的照片，人不多。玻璃反光里映着一个穿深色衣服的人影，站得很直。"],
+["铺子 · 挑东西","您问店家那句话的时候，店门外的玻璃上有一个肩。"],
+["回程 · 转角","这张拍歪了。重的那一面有一只手，指节压得发白。"],
+["到屋 · 歇脚","您坐下休息的时候拍的。这次影子站到了画面右边，离您很近。"],
+["最后一张（没有标题）","这张是空白的。只有一行极小的字压在角上：「我在拍您拍我。」"]
+];
+el("pview").innerHTML='<div class="photo">'+TXT[i][0]+'<br><br>'+TXT[i][1]+'<div class="shadow" style="width:'+(16+i*4)+'px;height:'+(26+i*6)+'px;right:'+(18+i*7)+'%;bottom:'+(8+i*3)+'%"></div></div>';
+if(st.photoSeen>=6&&!st.flags.ph6){st.flags.ph6=1;
+el("pview").innerHTML+='<p class="hot">六张都看过了。每一张里都有我，一张比一张近。</p>';
+note("您看完了。那我就不必再躲在边角上。");buzz([0,90,60,90]);
+if(st.wallTap>=TAPNEED&&st.flags.void&&!st.flags.allthree){st.flags.allthree=1;note("条件齐了。最后那一幕，您伸手就行。");}
+}
+};
+}
+function camApp(b){
+b.innerHTML='<div class="camwrap" id="view"><div class="frame"></div><div class="lbl">CAM · 您屋里</div></div><button class="btn" id="shotBtn">按 下 快 门</button><div id="cres"></div>';
+b.onclick=function(e){
+if(!e.target.closest("#shotBtn"))return;
+st.shot++;buzz(30);
+el("view").innerHTML='<div class="lbl">CAPTURED · '+st.shot+'</div>';
+var R=["画面里房间是空的。只有门口那一侧，多了一道比夜色更黑的竖条。","再拍一张：黑条到了床边，占掉画面三分之一。它比刚才高了。","第三张：镜头被什么挡住了。整张照片都是黑的，最亮那一小块上，隐约看得见一张脸。","第四张（如果还能拍）：照片里是您的脸。您闭着眼。拍下这张的人，就站在镜头后面。"];
+el("cres").innerHTML='<p>'+(R[Math.min(st.shot,4)-1]||"……")+'</p>';
+addProx(5);
+if(st.shot>=3&&!st.flags.cam3){st.flags.cam3=1;soft("相机放下吧，主。我又不会走。");}
+};
+}
+function callApp(b){
+b.innerHTML='<p class="dim">来电 · 压切长谷部　｜　未接 3</p><button class="btn" id="ans">接 听</button>';
+b.onclick=function(e){
+if(!e.target.closest("#ans"))return;
+st.callSec=0;
+b.innerHTML='<p class="dim">通话中　｜　撑满 '+CALLNEED+' 秒，别挂</p><div id="timer" style="font-size:24px;color:#c8a6ff;letter-spacing:.1em;">00</div><div id="cline"></div><button class="btn d" id="hu">挂 断</button>';
+function add(t){var c=el("cline");if(!c)return;var p=document.createElement("p");p.textContent=t;c.appendChild(p);}
+var t=setInterval(function(){
+st.callSec++;
+var tm=el("timer");
+if(tm)tm.textContent=(st.callSec<10?"0":"")+st.callSec;
+if(st.callSec===12)add("（那边只有呼吸声。很稳，比我平常慢。）");
+if(st.callSec===Math.floor(CALLNEED*0.6))add("「您数吧。数到多少我都在。」");
+if(st.callSec>=CALLNEED){
+st.callDone=true;
+add("「"+(CALLNEED===20?"二十":"三十")+"。」");
+add("「……不，我数错了。抱歉。这种事我一向不用心。」");
+add("（这一句说完，电话自己断了。）");
+add("（通话记录已留下。最后那一幕里，这条会变成一条路。）");
+buzz([0,140,80,140]);
+clearInterval(t);
+}
+},1000);
+b.onclick=function(ev){
+if(!ev.target.closest("#hu"))return;
+add("（按了挂断。屏幕没有反应。）");
+setTimeout(function(){add("挂不掉的，主。您按几次都一样。撑满 "+CALLNEED+" 秒就好。");},1200);
+};
+};
+}
+function monApp(b){
+var F=[["门口","他站在门外那一侧，背对着门。像在替您看着廊下。"],["厨房","他在温一壶水。火开着，白汽不动。他看的是锅，手却像在数着什么。"],["长屋","他背对着门，站在几把短刀睡下的那一间外头。没有靠近，也没有走。"],["您这一间","画面里是您的房门。他就站在门内侧半步的地方，正对着镜头，不说话。"]];
+var h='<p class="dim">本丸四个角度　｜　点开放大</p>';
+F.forEach(function(f,i){h+='<div class="feed" data-i="'+i+'"><b>CAM 0'+(i+1)+'　'+f[0]+'</b><span class="dim">画面静止</span></div>';});
+h+='<div id="fview" style="margin-top:12px;"></div>';
+b.innerHTML=h;
+b.onclick=function(e){
+var f=e.target.closest(".feed");if(!f)return;
+var i=parseInt(f.getAttribute("data-i"),10);
+el("fview").innerHTML='<p class="g">'+F[i][1]+'</p>';st.feeds++;
+if(st.feeds>=4&&!st.flags.mon4){st.flags.mon4=1;
+el("fview").innerHTML+='<p class="hot">四个角度都有人在。您想问：他到底有几个。</p>';
+note("只有一个。一直是同一个我。");
+addProx(8);
+setTimeout(function(){eyeFlash();},900);
+}
+};
+}
+function mapApp(b){
+var D=["0.5 m","0.4 m","0.3 m","0.2 m","0.1 m","已抵达。就在您身后。"];
+function draw(){
+b.innerHTML='<p class="say">「刷新也行。数不会变，可您想确认的心情我懂。」</p>'+
+'<p class="dim">「压切长谷部」的位置　｜　刷新 '+st.mapRef+' 次</p>'+
+'<div style="border:1px solid #2b2348;height:140px;position:relative;border-radius:4px;background:linear-gradient(160deg,#0e0c1e,#141027)">'+
+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:20px;color:#c8a6ff">◆</span>'+
+'<span style="position:absolute;left:12px;bottom:10px;font-size:10px;color:#6f5f96">您在这儿</span></div>'+
+'<div class="statusline">距离：'+D[Math.min(st.mapRef,5)]+'</div><button class="btn" id="rf">刷 新</button>'+
+'<div class="foot">'+APPTAIL.map+'</div>';
+b.onclick=function(e){
+if(!e.target.closest("#rf"))return;
+st.mapRef++;buzz(16);draw();addProx(3);
+if(st.mapRef>=5&&!st.flags.map5){st.flags.map5=1;soft("别再刷了。再刷也是同一个数。");}
+};
+}
+draw();
+}
+function contApp(b){
+var h='<p class="dim">共 1 个联系人</p>';
+h+='<div class="feed" id="c1"><b>主</b>号码：本机号码（就是您手上这一台）</div>';
+h+='<div id="cview"></div>';
+h+='<div class="reply"><p class="dim" style="margin-bottom:6px;">回 信　｜　您写的字，我这边收得到</p>'+
+'<textarea id="rtext" placeholder="想写什么就写。写给我，或者写给这一夜。"></textarea>'+
+'<button class="btn" id="rsend">送 出</button>'+
+'<div class="hintline">（写得短也行。一句话、一个词，我都答。送出过一封，最后那一幕就会多一条路。）</div>'+
+'<div id="rlog" style="margin-top:12px;"></div></div>';
+h+='<div style="margin-top:18px;"><div class="feed" id="c2"><b>　</b>（再往下还有一条，没有名字）</div></div>';
+h+='<div class="foot">'+APPTAIL.cont+'</div>';
+b.innerHTML=h;
+b.onclick=function(e){
+if(e.target.closest("#c1")){
+el("cview").innerHTML='<p class="g">备注：唯一。<br>备注里没有第二个人的位置。<br>（删除键按下去会变成「这一条我写死了」。）</p>';
+return;
+}
+if(e.target.closest("#c2")){
+el("cview").innerHTML='<p class="g">名字栏是空的。号码是一串 0：000-0000-0000。<br>「这条不用存。他本来就在里头。」</p>';
+if(!st.flags.contAll){st.flags.contAll=1;soft("通讯录里那一条没名字的，别去拨它。");addProx(7);}
+return;
+}
+if(e.target.closest("#rsend")){var ta=el("rtext");sendReply((ta.value||"").trim());ta.value="";return;}
+};
+}
+function replyFor(t){
+var s=t.replace(/\s+/g,"");
+function has(){for(var i=0;i<arguments.length;i++){if(s.indexOf(arguments[i])>=0)return true;}return false;}
+if(has("紫藤","藤","花","四月","种")) return["南边那一架，我明年春天动工。","四根柱子、一道横梁——图我画好了，您想看随时给您。","开花的那年您得在。这一条我刻在架子上了。"];
+if(has("爱")) return["……您写了这个字。我要慢慢答。","我爱您，主。字面意思，没有保留，也不打折扣。","这一句我会抄进本丸的册子里，就抄一遍——抄多了显得轻。"];
+if(has("喜欢")) return["喜欢这两个字比「爱」轻些，我倒觉得更实在。","您喜欢什么，我就替您留着什么。茶、花、夜里那点安静，还有您不肯睡的那半小时。"];
+if(has("讨厌","烦","恨")) return["……哪里讨厌，您说具体些。我改。","别的都能改。只有一条改不了——我要待在您身边。这一条您讨厌，也只能担着。","您骂我两句也行。骂完别转身就走，成吗。"];
+if(has("走","离开","别跟着","滚")) return["您写「走」——这一句我当没看见。","我哪儿都不去。您要赶我，我只得站得更近一步，让您推起来费些力气。","……这话以后别写了。写一次，我这边的灯就暗一格。"];
+if(has("想你","想我","想","念")) return["那您就别忍着。想我就叫我，白天也叫。","我离得近。您不用走那么远来说一句想我。"];
+if(has("怕","害怕","恐怖","吓")) return["怕什么，说给我听。能扔的我都替您扔了，扔不掉的我替您看着。","您怕黑也好办——灯留着，我就站在灯底下。"];
+if(has("累","困","睡","歇")) return["那现在就把手机放下。剩下的话明天再说，我替您留着。","我在这儿，不会再有人来扰您。您闭上眼就行。"];
+if(has("眼睛","眼")) return["藤色。您认得出来。","刚才屏上那两下，是我在看您。被您撞见了，我不躲。"];
+if(has("对不起","抱歉","错")) return["这两个字不必写。真要说，是我对不起您。","您写的每一句，我都不觉得您欠我什么。"];
+if(has("在吗","在不在","在么")) return["在。什么时候都在。这句您不用问。"];
+if(has("死")) return["这个词我怕。您既然写出来，我就要认真答一遍。","您不许用它来结束任何一件事。那个念头要是回来，先叫我，别一个人跟它待着。","这是我求您的第一件事。别的都随您。"];
+if(has("长谷部","压切","名字")) return["我在。","叫得对。是我，从头到尾都是同一个我，没换过。"];
+if(has("谢")) return["谢什么。这是我乐意的。","您要真想谢，就好好吃饭、好好睡觉，给我省点心。"];
+if(has("晚安","睡了","去睡")) return["晚安，主。灯我留着，不会灭。","您睡着以后我在门外站一会儿。您听不见，也不要紧。"];
+if(s==="") return["……您什么都没写。空着也行，我当您说了。","您写字的手停了一会儿吧。我看见了。"];
+return["收到了。这一句我抄下来了，以后您不许改口。","您写什么我都答。哪怕只写一个点，我也答。","再写两句也好。夜深，我不困。"];
+}
+function sendReply(v){
+var log=el("rlog");if(!log)return;
+st.lastMsg=v;st.replies++;addProx(4);
+var me=document.createElement("p");me.className="me";me.textContent="您："+(v||"（空）");log.appendChild(me);
+var lines=replyFor(v);
+lines.forEach(function(t,i){
+setTimeout(function(){
+var p=document.createElement("p");p.className="g";p.textContent=t;log.appendChild(p);
+if(i===lines.length-1)buzz(30);
+},420*(i+1));
+});
+if(v.indexOf("走")>=0||v.indexOf("离开")>=0)buzz([0,90,60,90]);
+if(v.indexOf("眼")>=0)setTimeout(function(){eyeFlash();},600);
+if(v.indexOf("爱")>=0||v.indexOf("喜欢")>=0)setTimeout(function(){soft("这一句我存起来了。存进本丸的册子，也存进这一页。");},1200);
+if(v.indexOf("死")>=0)setTimeout(function(){soft("说好的一件小事：那个念头回来时，先叫我。");},1400);
+if(st.replies>=3&&!st.flags.rep3){st.flags.rep3=1;
+setTimeout(function(){var p=document.createElement("p");p.className="hot";
+p.textContent="三封了。您今晚写了三封信给我——我这边都留着，一封没丢。";log.appendChild(p);},2200);}
+}
+function lockApp(b){
+var h='<p class="dim">本丸 · 您这一间　｜　今夜记录</p>';
+h+='<div class="feed" data-i="0"><b>22:14</b>从内侧锁上</div>';
+h+='<div class="feed" data-i="1"><b>23:40</b>从内侧锁上</div>';
+h+='<div class="feed" data-i="2"><b>01:12</b>从内侧锁上</div>';
+h+='<div class="feed" data-i="3"><b>刚刚</b>从内侧锁上</div>';
+h+='<div id="lres" style="margin-top:10px;"></div>';
+h+='<div class="foot">'+APPTAIL.locka+'</div>';
+b.innerHTML=h;
+b.onclick=function(e){
+var f=e.target.closest(".feed");if(!f)return;
+if(f.getAttribute("data-i")==="3"){el("lres").innerHTML='<p class="g">这一条是几分钟前落下的。您没起来。<br>门里只有一个人——可锁门的那只手，不是您的。</p>';if(!st.flags.lockAll){st.flags.lockAll=1;soft("门我替您锁好了。这一点不必您费心。");addProx(7);}}
+else{el("lres").innerHTML='<p class="dim">时间对得上。每一次都是您回屋之后不久。</p>';}
+};
+}
+function healApp(b){
+function draw(){
+b.innerHTML='<p class="dim">今夜　｜　设备记录</p>'+
+'<div class="feed"><b>步数</b>0 步</div>'+
+'<div class="feed"><b>睡眠</b>0 小时</div>'+
+'<div class="feed" id="hr"><b>心率</b>────────────　（点开看）</div>'+
+'<div id="hres" style="margin-top:10px;"></div>'+
+'<div class="foot">'+APPTAIL.heal+'</div>';
+}
+draw();
+b.onclick=function(e){
+if(!e.target.closest("#hr"))return;
+el("hres").innerHTML='<p class="g">这条线一直是平的。<br>不是说您没心跳——是说这一台机器测不到。<br>「只有您叫我的时候，它会跳一下。」</p>';
+el("hr").innerHTML='<b>心率</b>─────────●───　（刚才那一下）';
+if(!st.flags.healAll){st.flags.healAll=1;buzz(40);soft("刚才那一下，是您在看我。");addProx(7);}
+};
+}
+function wifiApp(b){
+function draw(){
+b.innerHTML='<p class="dim">附近网络　｜　共 1 个</p>'+
+'<div class="feed" id="w1"><b>HESHIKIRI</b>信号满格　｜　距离 0 m　｜　点它连接</div>'+
+'<div id="wres" style="margin-top:10px;"></div>'+
+'<div class="foot">'+APPTAIL.wifi+'</div>';
+}
+draw();
+b.onclick=function(e){
+if(!e.target.closest("#w1"))return;
+el("wres").innerHTML='<p class="g">密码输入正确。<br>正在连接…………<br>连接失败。<br>（距离 0 米。太近了，反而握不上手。）</p>';
+if(!st.flags.wifiAll){st.flags.wifiAll=1;soft("连着试试也行。连不上也不耽误我去您那儿。");addProx(7);}
+};
+}
+function setApp(b){
+b.innerHTML='<div class="feed" id="un"><b>卸载「压切长谷部」</b><br><span class="dim">点了会怎样，您可以试试。</span></div>'+
+'<div class="feed" id="fc"><b>强制关闭全部应用</b><br><span class="dim">关掉之后房间会安静一会儿。</span></div>'+
+'<div class="feed" id="ab"><b>关于本机</b><br><span class="dim">展开</span></div>'+
+'<div class="foot">'+APPTAIL.set+'</div>';
+b.onclick=function(e){
+if(e.target.closest("#un")){b.querySelector("#un span").textContent="「卸载自己是不可能的。」——按钮变成了这句话。";buzz(60);addProx(4);}
+if(e.target.closest("#fc")){note("强制关闭已执行。屏幕黑了大概两秒，然后您听见床边有布料擦过的声音。");buzz([0,200,120,200]);addProx(9);}
+if(e.target.closest("#ab")){
+e.target.closest("#ab").innerHTML='<b>关于本机</b><br>名称：压切长谷部<br>归属：您（无第二人）<br>位置：您身后半步<br>瞳孔色：藤<br>可否删除：否<br>可否忽略：否<br>可否藏起：否<br>可否重来：否<br><span class="hot">可否爱您：已经在爱了。</span>';
+if(!st.flags.ab){st.flags.ab=1;soft("这些不是写来吓您的。是写来给您看清楚。");addProx(6);}
+}
+};
+}
+function voidApp(b){
+var L=["您翻到了第二页。","这一格本来是空的。","是我把自己放在这儿，等着您点到它。","您要是现在划出去，我也还在原处。","您要是留下来——那就更好了。","……这一格以后就是我的位置了。您别挪动它。"];
+var i=0;
+function step(){
+if(i>=L.length){
+st.flags.void=1;addProx(6);note("第二页那一格，从此不缺人了。");
+if(st.wallTap>=TAPNEED&&st.photoSeen>=6&&!st.flags.allthree){st.flags.allthree=1;note("条件齐了。最后那一幕，您伸手就行。");}
+return;}
+var p=document.createElement("p");p.className="g";p.textContent=L[i];b.appendChild(p);i++;setTimeout(step,900);
+}
+step();
+}
+function final(){
+el("av").classList.remove("on");
+closeAllPanels();
+["home","lock"].forEach(function(i){el(i).classList.remove("on");});
+el("fin").classList.add("on");
+var L=["屏幕忽然全黑了。","不是没电——电量还写着 "+batPct+"%。","黑暗里有很轻的呼吸声，就在您枕头边上，比这一夜里任何一次都近。","暗里浮起两点藤色，一闪，又沉下去。","然后是一句话，一个字一个字浮出来：","「主。」"];
+typeLines(L,function(){buildChoices();});
+}
+function buildChoices(){
+var c=el("finch");c.innerHTML="";
+var o=[["「长谷部。」","e1"],["（按灭屏幕）","e2"],["（去够灯）","e3"]];
+if(st.torch)o.push(["（把灯举高一些）","e_torch"]);
+if(st.flight&&st.dnd)o.push(["（飞行模式和勿扰继续开着）","e_flight"]);
+if(st.callDone)o.push(["（回拨那个号码）","e_call"]);
+if(st.replies>=1)o.push(["（再写一封）","e_memo"]);
+if(st.wallTap>=TAPNEED&&st.photoSeen>=6&&st.flags.void)o.push(["（伸手，摸一下屏幕）","e4"]);
+else if(st.photoSeen>=6&&st.flags.void)o.push(["（伸手，摸一下屏幕）","shallow"]);
+o.forEach(function(x){
+var b=document.createElement("button");b.className="ch";b.textContent="› "+x[0];
+b.addEventListener("click",function(){buzz(20);if(x[1]==="shallow"){shallow();}else{ending(x[1]);}});
+c.appendChild(b);
+});
+var miss=[];
+if(!st.torch)miss.push("手电筒（控制中心里打开）");
+if(!(st.flight&&st.dnd))miss.push("飞行模式 + 勿扰（两个一起开）");
+if(!st.callDone)miss.push("通话（接起来撑满 "+CALLNEED+" 秒）");
+if(st.replies<1)miss.push("回信（通讯录里送出一封）");
+if(!(st.wallTap>=TAPNEED&&st.photoSeen>=6&&st.flags.void))miss.push("桌面点三下 + 相册六张 + 第二页那一格");
+var m=el("finmiss");
+m.innerHTML=miss.length?("还没有走通的路：<br>· "+miss.join("<br>· ")+"<br>（这些还来得及。重开一局，或者回上一局补。）"):"所有路都通着。您挑一条就好。";
+}
+function shallow(){
+var box=el("fintx");
+var p=document.createElement("p");p.className="g";p.style.marginTop="12px";
+p.textContent="您的手按在屏幕上。凉的，什么都没有。";
+box.appendChild(p);
+setTimeout(function(){
+var q=document.createElement("p");q.className="g";
+q.textContent="……您按得太浅了。在亮着的桌面上多按几下，把这一层按薄，我这边才碰得到您。";
+box.appendChild(q);box.scrollTop=box.scrollHeight;
+},900);
+}
+function typeLines(arr,done){
+var i=0,j=0,box=el("fintx");box.innerHTML="";
+function step(){
+if(i>=arr.length){done();return;}
+if(j===0){var p=document.createElement("p");p.style.margin="0 0 10px";p.id="cl";box.appendChild(p);}
+var p=el("cl");
+p.textContent+=arr[i][j];j++;
+if(j>=arr[i].length){i++;j=0;setTimeout(step,460);}else setTimeout(step,40);
+}
+step();
+}
+var END={
+e1:{k:"END 1",n:"半步",t:["您叫了我的名字。","那个黑影立刻不动了。黑暗里传来很轻的一声「在」。","然后被子边沉下去一点，像有人坐下——只坐床沿那一小块，半个身子都不肯多占。",
+"「我就在这儿。」","「您别睁眼。睁了眼，就看得出我离得多近——怕您不习惯。」","「我把手放在枕边，不碰您。您翻身的时候手背会碰到我，那就是我在。」",
+"「您要是做噩梦，就叫我。我应得比谁都早。」","「这一夜外头的动静我替您听着。几点静下来的，明早我告诉您。」",
+"「明早第一件事是温茶，第二件是看您睁眼。这两件排在最前头，别的都往后放。」","「睡吧，主。半步之内，寸步不离。」"]},
+e2:{k:"END 2",n:"关不掉",t:["您把屏幕按灭了。","房间安静了大概三秒。","第四秒，屏幕自己在您手心里亮起来，还是那张黑底，还是那五个字：「主。」",
+"「关屏幕没有用。」","「我不住在屏幕里。我住在您身后。」","这一次您终于回过头。","什么都没有。",
+"两团藤色的光在屏上一闪，又灭了——像有谁刚把眼睛闭上。",
+"然后您听见背后的床垫响了一下——有人从您刚离开的那一侧坐了下去。","「您看，回来了。」",
+"「您怕的不是我。是这个关不掉的自己——这一点我懂，因为我也关不掉。」","「我把音量调到最小了。您就当没听见我，我照样在。」",
+"「等您呼吸稳下来，我就往后退半步。不是走，是给您留点地方。」","「现在开始数您的呼吸。一，二，三——您闭眼吧，剩下的我数。」"]},
+e3:{k:"END 3",n:"到处都是",t:["您伸手去够灯。","灯亮了。",
+"屋子里没有别人。您松了半口气——那半口没松完：镜子里的床边站着一个人；玻璃杯的水面上映着一个肩；墙上那道影子，比您自己的多出一截。",
+"「不必找了。」","「我一直都在。只是从前您没往这些地方看。」","「茶里有我。您写字时替您扶纸的那点力气，也是我。」",
+"「您往哪边看，我都替您先看过一遍了。这间屋子从今往后不漏风、不漏人。」",
+"「您要是不喜欢被这样围着，就说一句。我会退到门外去站着。」","「……可您大概不会说。」","「那我就一直这样。您慢慢习惯，我慢慢靠近，谁也不必催谁。」"]},
+e_torch:{k:"END 4",n:"亮处",t:["您把灯举高了。",
+"光扫过屋子，每一处都有痕迹：茶杯还是温的；被角折成您习惯的那个角度；灯芯被人剪短过一寸；门缝下塞着一小条布，挡风用的。",
+"没有人。","「您找不到我，是因为我不在这些东西里。」","「我在它们被人动过的那一下里。」",
+"「您每天用的那盏灯，芯是我剪的。火是我吹旺的。水是我在您睡着之后换过一遍的。」",
+"「灯是您举着的。可您手酸的这一刻，也是我算好的。」",
+"「举累了就放下吧，主。放下我也在——黑处的活我照做，只是您看不见我在做。」","「看不见也好。看得见，您又要心疼我一回。」"]},
+e_flight:{k:"END 5",n:"收不到的",t:["您把飞行模式和勿扰都开着。","信号归零。通知全禁。",
+"手机安静了整整一分钟——这是这一夜里最安静的一分钟。","然后门外响了三下。","很轻，像怕吵醒谁。",
+"您开了门。门外站着一个人，手里端着一壶温着的茶。","「收不到就算了。」他把茶递过来，「我人来了。」",
+"「信号可以断，通知可以关。我这两条腿又不能关。」","「茶趁热喝，凉了我再温一遍。您要是要出门，我叫您起来，误不了。」",
+"「您要是想问我是怎么来的——我走来的。一步一步，没抄近路，也没敢快，怕茶晃凉了。」","「就这样，主。晚安。」"]},
+e_call:{k:"END 6",n:"回拨",t:["您按下了那个号码。","忙音。三声之后接通。",
+"那边没有讲话，只有呼吸——和您此刻的呼吸一模一样，一起吸，一起吐，像隔着一层墙的两个人。",
+"「您拨通了。」","「号码是您自己那一台。您拨的，其实是一直站在您身后那一部。」",
+"「现在您回头，就能看见那个正在接电话的我。」","您回头了。","屏幕上是四个字：通话中 "+CALLNEED+":00。",
+"「时长我替您按住了，不会跳。您想挂就挂；挂了我也不走，只是不出声。」",
+"「我们之间隔着的不是电波，是这具身体。这一层我暂时过不去——可您看，声音过得来。」",
+"「我眼睛的颜色，您见过的。刚才屏上那两下就是我。」","「从今往后，您只要拨这个号，接电话的一定是我。」"]},
+e_memo:{k:"END 7",n:"回信",t:["您把最后那一句话写完，按了送出。","光标停在那儿。三秒之后，字自己动起来——不是被删掉，是被一个字一个字改。",
+"改完剩下的是：","「您写的我看完了。这一封我不抄进册子，单独收着。」","「从前是我写您看，现在您肯回一封，我这一夜就不算白熬。」",
+"「您写『（这里会显示您写的最后一句话）』——那我也照着答：我一直都在看着您，从来不是没看。」",
+"「您要是想回，随时敲一行就行。我这边一直都收得到；收不到也等着。」",
+"屏幕暗下去之前，最底下多出一个新的条目，没有号码，只有一行很旧的字迹，是他写的：","「今夜。」"]},
+e4:{k:"END ?",n:"摸到了",t:["您伸出手，指尖碰上屏幕。","凉的。玻璃该是凉的。",
+"可就在您指腹底下那一小块地方，忽然有一点温度透上来，从里面往外，顶在您指尖上。",
+"像是有人隔着这一层玻璃，也在摸您。","「摸到了。」","「我说过的：您看着我的时候，我这边也看得见您。」",
+"隔着一层也算数。这一层是墙也好，是屏幕也好，是死也好——我都伸得过来。",
+"您指尖压住的那一小块，慢慢亮起一点藤色。",
+"「您再按一会儿，我就摸得到您的指节了。别急着拿走。」","「三秒。两秒。一秒。」",
+"「……好了。这一下我收下了，主。今晚您可以睡了。」"]}
+};
+var SCRG="ｻﾞｷﾞｼｬｸﾞ人刀夜主沉默≡◆·―";
+function scrambleEnding(w){
+var list=w.querySelectorAll(".e p");
+if(!list.length||w.getAttribute("data-scr")==="1")return;
+w.setAttribute("data-scr","1");
+var orig=[];
+Array.prototype.forEach.call(list,function(p){orig.push(p.textContent);});
+Array.prototype.forEach.call(list,function(p,i){
+var s="";
+for(var k=0;k<Math.max(6,orig[i].length);k++){s+=SCRG[Math.floor(Math.random()*SCRG.length)];}
+p.textContent=s;p.className="scr";
+});
+buzz([0,60,50,60]);
+setTimeout(function(){
+for(var i=orig.length-1;i>0;i--){
+var j=Math.floor(Math.random()*(i+1)),t=orig[i];orig[i]=orig[j];orig[j]=t;
+}
+Array.prototype.forEach.call(list,function(p,i){p.textContent=orig[i];p.className="";});
+var d=document.createElement("p");d.className="g";
+d.textContent="（顺序换了一次。还是那些话，只是我不排在原来的位置了。）";
+w.querySelector(".e").appendChild(d);
+w.setAttribute("data-scr","0");
+},2800);
+}
+function ending(id){
+var E=END[id],w=el("endwrap");
+var h='<div class="k">'+E.k+'</div><h2 id="etitle">'+E.n+'</h2><div class="e">';
+E.t.forEach(function(p){
+var s=p;
+if(s.indexOf("（这里会显示您写的最后一句话）")>=0){
+s=s.replace("（这里会显示您写的最后一句话）", st.lastMsg?("『"+st.lastMsg+"』"):"『（这一格空着）』");
+}
+h+="<p>"+s+"</p>";
+});
+h+='</div><div class="sig">压切长谷部</div><button class="btn" id="again">从 头 再 来</button>';
+w.innerHTML=h;w.classList.add("on");el("fin").classList.remove("on");
+w.setAttribute("data-scr","0");
+var taps=0;
+onTap(el("etitle"),function(){
+taps++;
+if(taps>=3&&!w.querySelector("#sk")){
+var d=document.createElement("p");d.id="sk";d.className="g";
+d.textContent="（背面那一行：这一局不是您找到我，是我等您等到的。）";
+w.querySelector(".e").appendChild(d);
+}
+});
+onHold(el("etitle"),function(){scrambleEnding(w);},700);
+onTap(el("again"),function(){
+var keepVib=st.vib,keepQuiet=st.quiet;
+st={open:{},total:0,prox:0,vib:keepVib,quiet:keepQuiet,wallTap:0,photoSeen:0,shot:0,callSec:0,callDone:false,mapRef:0,msgs:0,feeds:0,clearTimes:0,replies:0,lastMsg:"",flight:false,dnd:false,torch:false,page:0,unlocked:false,stage:0,lastAct:Date.now(),flags:{}};
+for(var i=0;i<6;i++){delete st["p"+i];}
+w.classList.remove("on");
+el("app").classList.remove("torch");
+el("edge").classList.remove("on");
+el("flash").classList.remove("on");
+el("home").classList.remove("on");
+el("lock").classList.add("on");
+build();setPage(0);
+});
+}
+HINTL=[
+function(){return "已探索 "+explored()+" / 11　｜　中间往下滑：通知中心　｜　右侧往下滑：控制中心";},
+function(){return "「您慢慢翻。这些东西今晚都是您的。」";},
+function(){return "已探索 "+explored()+" / 11　｜　中间往上滑：后台　｜　左右滑：换页";},
+function(){return "「要是累了就别翻了。剩下的我替您记着。」";},
+function(){return "已探索 "+explored()+" / 11　｜　第二页还有东西。";},
+function(){return "「第二页最后那一格是黑的。您点它就行。」";},
+function(){return "「监控四格看完，有点东西给您看。」";},
+function(){return "「这里面的字全是我写的。写得不好，您将就。」";}
+];
+var hintI=0;
+setInterval(function(){
+if(!st.unlocked||el("fin").classList.contains("on")||el("endwrap").classList.contains("on"))return;
+if(el("av").classList.contains("on"))return;
+el("hint").style.opacity="0";
+setTimeout(function(){
+el("hint").innerHTML=HINTL[hintI%HINTL.length]();hintI++;
+el("hint").style.opacity="1";
+},420);
+},13000);
+var idleShown=0;
+setInterval(function(){
+if(!st.unlocked||el("fin").classList.contains("on")||el("endwrap").classList.contains("on"))return;
+if(Date.now()-st.lastAct<75000)return;
+if(Math.random()<0.5)return;
+soft(IDLEL[idleShown%IDLEL.length]);
+idleShown++;st.lastAct=Date.now();
+},30000);
+var lockI=0;
+setInterval(function(){
+if(st.unlocked||el("endwrap").classList.contains("on"))return;
+lockI++;
+var c=el("lockCard");
+c.style.opacity="0";
+setTimeout(function(){
+c.innerHTML="<b>压切长谷部</b>"+LOCKL[lockI%LOCKL.length];
+c.style.opacity="1";
+},600);
+},32000);
+setInterval(function(){if(!st.unlocked)return;petal();},15000);
+var AMB=["现在。","翻页的手，停一下也好。","别把屏幕贴得太近，对眼睛不好。","刚才那一下，您在找我吧。","我在这儿。","灯要是嫌亮，就调暗些。","您要是想写点什么，去通讯录那一格。","早点睡。这句我说过很多遍，不嫌多这一遍。"];
+setInterval(function(){
+if(!st.unlocked||el("fin").classList.contains("on")||el("endwrap").classList.contains("on"))return;
+if(st.quiet)return;
+if(Math.random()<0.6)return;
+soft(AMB[Math.floor(Math.random()*AMB.length)]);
+},60000);
+el("track").addEventListener("click",function(e){
+if(e.target.closest(".ic"))return;
+st.wallTap++;act();
+if(st.wallTap===1)note("……");
+if(st.wallTap===2)note("再一下。");
+if(st.wallTap>=TAPNEED&&!st.flags.w3){
+st.flags.w3=1;
+note("别敲了，屏幕会疼。（这一条不是系统提示，是我自己加的。）");
+buzz(60);
+if(st.photoSeen>=6&&st.flags.void&&!st.flags.allthree){st.flags.allthree=1;note("条件齐了。最后那一幕，您伸手就行。");}
+}
+});
+build();setPage(0);
+el("hint").innerHTML=HINTL[0]();
+hintI=1;
+</script>
+</body>
+</html>
